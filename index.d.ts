@@ -84,6 +84,8 @@ type UploadFileItem = {
 	filename: string // Name of file
 	filepath: string // Path to file
 	filetype: string // The mimetype of the file to be uploaded, if not defined it will get mimetype from `filepath` extension
+	rangeLocation?: number // If uploading only part of a file, the location inside the file to start.
+	rangeLength?: number // If uploading only part of a file, the length to upload after the location.
 }
 
 type UploadBeginCallbackResult = {

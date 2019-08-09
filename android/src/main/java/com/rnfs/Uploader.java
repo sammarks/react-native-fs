@@ -58,7 +58,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
         long totalFileLength = 0;
         BufferedInputStream responseStream = null;
         BufferedReader responseStreamReader = null;
-        String name, filename, filetype;
+        String name, filename, filetype, rangeLocation, rangeLength;
         try {
             Object[] files = params.files.toArray();
             boolean binaryStreamOnly = params.binaryStreamOnly;
@@ -130,7 +130,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
 
             byteSentTotal = 0;
             Runtime run = Runtime.getRuntime();
-            
+
             for (ReadableMap map : params.files) {
                 if (!binaryStreamOnly) {
                     request.writeBytes(fileHeader[fileCount]);
@@ -138,7 +138,23 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
                 File file = new File(map.getString("filepath"));
                 int fileLength = (int) file.length();
                 int bytes_read = 0;
-                BufferedInputStream bufInput = new BufferedInputStream(new FileInputStream(file));
+                FileInputStream fileInputStream = new FileInputStream(file);
+
+                try {
+                    rangeLocation = map.getString("rangeLocation");
+                    rangeLength = map.getString("rangeLength");
+                } catch (NoSuchKeyException e) {
+                    rangeLocation = null;
+                    rangeLength = null;
+                }
+                if (rangeLocation && rangeLength) {
+                    long rangeLocationLong = (long) rangeLocation;
+                    int rangeLengthInt = (int) rangeLength;
+                    fileInputStream.skip(rangeLocationLong);
+                    fileLength = min(fileLength - (int) rangeLocationLong, rangeLengthInt);
+                }
+
+                BufferedInputStream bufInput = new BufferedInputStream(fileInputStream);
                 int buffer_size =(int) Math.ceil(fileLength / 100.f);
                 if(buffer_size > run.freeMemory() / 10.f) {
                     buffer_size = (int) Math.ceil(run.freeMemory() / 10.f);

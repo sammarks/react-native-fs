@@ -75,6 +75,13 @@
     }
 
     NSData *fileData = [NSData dataWithContentsOfFile:filepath];
+
+    // Pull the range of data to upload if requested.
+    if (file[@"rangeLocation"] != nil && file[@"rangeLength"] != nil) {
+      NSRange range = NSMakeRange([file[@"rangeLocation"] integerValue], [file[@"rangeLength"] integerValue]);
+      fileData = [fileData subdataWithRange:range];
+    }
+
     if (!binaryStreamOnly) {
       [reqBody appendData:formBoundaryData];
       [reqBody appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", name.length ? name : filename, filename] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -86,7 +93,7 @@
       }
       [reqBody appendData:[[NSString stringWithFormat:@"Content-Length: %ld\r\n\r\n", (long)[fileData length]] dataUsingEncoding:NSUTF8StringEncoding]];
     }
-  
+
     [reqBody appendData:fileData];
     if (!binaryStreamOnly) {
       [reqBody appendData:[@"\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
